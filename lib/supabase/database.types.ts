@@ -18,6 +18,10 @@ export interface Database {
           display_name: string | null;
           avatar_url: string | null;
           timezone: string;
+          current_streak: number;
+          longest_streak: number;
+          streak_freeze_count: number;
+          streak_last_date: string | null;
           created_at: string;
         };
         Insert: {
@@ -25,6 +29,10 @@ export interface Database {
           display_name?: string | null;
           avatar_url?: string | null;
           timezone?: string;
+          current_streak?: number;
+          longest_streak?: number;
+          streak_freeze_count?: number;
+          streak_last_date?: string | null;
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["profiles"]["Insert"]>;

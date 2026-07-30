@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { toLocalDateString, addDays, getWeekday } from "@/lib/date/local-day";
+import { toLocalDateString, addDays, getWeekday, toLocalHour } from "@/lib/date/local-day";
 
 describe("toLocalDateString", () => {
   it("formats a UTC instant in UTC", () => {
@@ -48,5 +48,20 @@ describe("getWeekday", () => {
 
   it("identifies a known Saturday", () => {
     expect(getWeekday("2026-03-07")).toBe(6);
+  });
+});
+
+describe("toLocalHour", () => {
+  it("reads the hour directly in UTC", () => {
+    expect(toLocalHour(new Date("2026-03-05T14:30:00Z"), "UTC")).toBe(14);
+  });
+
+  it("normalizes midnight to 0 rather than 24", () => {
+    expect(toLocalHour(new Date("2026-03-05T00:15:00Z"), "UTC")).toBe(0);
+  });
+
+  it("shifts the hour across a timezone boundary", () => {
+    // 02:00 UTC is 18:00 the previous day in Los Angeles (UTC-8).
+    expect(toLocalHour(new Date("2026-03-05T02:00:00Z"), "America/Los_Angeles")).toBe(18);
   });
 });

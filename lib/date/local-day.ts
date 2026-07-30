@@ -29,3 +29,14 @@ export function getWeekday(dateString: string): number {
   const [year, month, day] = dateString.split("-").map(Number);
   return new Date(Date.UTC(year, month - 1, day)).getUTCDay();
 }
+
+/** The hour (0-23) an instant falls on in `timeZone`. */
+export function toLocalHour(date: Date, timeZone: string): number {
+  const formatted = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    hour: "numeric",
+    hour12: false,
+  }).format(date);
+  // "24" is midnight in some locale/hour-cycle combinations; normalize to 0.
+  return Number(formatted) % 24;
+}

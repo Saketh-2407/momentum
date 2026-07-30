@@ -8,10 +8,15 @@ type Task = Database["public"]["Tables"]["tasks"]["Row"];
 
 const setTaskStatus = vi.fn();
 const deleteTask = vi.fn();
+const showLevelUpToast = vi.fn();
 
 vi.mock("@/app/dashboard/actions", () => ({
   setTaskStatus: (...args: unknown[]) => setTaskStatus(...args),
   deleteTask: (...args: unknown[]) => deleteTask(...args),
+}));
+
+vi.mock("@/components/gamification/level-up-toast", () => ({
+  showLevelUpToast: (...args: unknown[]) => showLevelUpToast(...args),
 }));
 
 function makeTask(overrides: Partial<Task> = {}): Task {
@@ -35,7 +40,9 @@ function makeTask(overrides: Partial<Task> = {}): Task {
 
 beforeEach(() => {
   setTaskStatus.mockReset();
+  setTaskStatus.mockResolvedValue({ leveledUp: false });
   deleteTask.mockReset();
+  showLevelUpToast.mockReset();
 });
 
 describe("TaskList", () => {
@@ -65,6 +72,26 @@ describe("TaskList", () => {
     await user.click(screen.getByRole("checkbox"));
 
     await waitFor(() => expect(setTaskStatus).toHaveBeenCalledWith("task-1", "done"));
+  });
+
+  it("shows a level-up toast when completing a task levels the user up", async () => {
+    setTaskStatus.mockResolvedValue({ leveledUp: true, newLevel: 4 });
+    const user = userEvent.setup();
+    render(<TaskList tasks={[makeTask()]} />);
+
+    await user.click(screen.getByRole("checkbox"));
+
+    await waitFor(() => expect(showLevelUpToast).toHaveBeenCalledWith(4));
+  });
+
+  it("does not show a level-up toast for an ordinary completion", async () => {
+    const user = userEvent.setup();
+    render(<TaskList tasks={[makeTask()]} />);
+
+    await user.click(screen.getByRole("checkbox"));
+
+    await waitFor(() => expect(setTaskStatus).toHaveBeenCalled());
+    expect(showLevelUpToast).not.toHaveBeenCalled();
   });
 
   it("deletes a task", async () => {

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 
 export default function Home() {
   return (
@@ -15,12 +15,15 @@ export default function Home() {
         coming back, and friends to keep you honest.
       </p>
       <div className="flex flex-col gap-3 sm:flex-row">
-        <Button render={<Link href="/signup" />} size="lg">
+        <Link href="/signup" className={buttonVariants({ size: "lg" })}>
           Get started
-        </Button>
-        <Button render={<Link href="/login" />} size="lg" variant="outline">
+        </Link>
+        <Link
+          href="/login"
+          className={buttonVariants({ size: "lg", variant: "outline" })}
+        >
           Log in
-        </Button>
+        </Link>
       </div>
       <p className="text-sm text-muted-foreground">
         Or{" "}

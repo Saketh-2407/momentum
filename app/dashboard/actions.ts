@@ -4,6 +4,9 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { validateTaskDraft, type TaskDraft } from "@/lib/tasks/validation";
 import { toLocalDateString } from "@/lib/date/local-day";
+import { computeTaskXp } from "@/lib/gamification/xp";
+import { didLevelUp, getLevelProgress } from "@/lib/gamification/levels";
+import { advanceStreak, type StreakState } from "@/lib/gamification/streak";
 
 export interface ActionState {
   error?: string;
@@ -75,9 +78,34 @@ export async function createTask(
   return {};
 }
 
-export async function setTaskStatus(taskId: string, status: "todo" | "done"): Promise<void> {
+export interface SetTaskStatusResult {
+  leveledUp: boolean;
+  newLevel?: number;
+}
+
+async function getTotalXp(userId: string): Promise<number> {
+  const supabase = await createClient();
+  const { data } = await supabase.from("xp_events").select("amount").eq("user_id", userId);
+  return (data ?? []).reduce((sum, event) => sum + event.amount, 0);
+}
+
+export async function setTaskStatus(
+  taskId: string,
+  status: "todo" | "done",
+): Promise<SetTaskStatusResult> {
   const userId = await requireUserId();
   const supabase = await createClient();
+
+  const { data: existing } = await supabase
+    .from("tasks")
+    .select("status, importance, effort")
+    .eq("id", taskId)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (!existing) {
+    return { leveledUp: false };
+  }
 
   await supabase
     .from("tasks")
@@ -88,7 +116,34 @@ export async function setTaskStatus(taskId: string, status: "todo" | "done"): Pr
     .eq("id", taskId)
     .eq("user_id", userId);
 
+  let result: SetTaskStatusResult = { leveledUp: false };
+
+  const justCompleted = status === "done" && existing.status !== "done";
+  const justReverted = status === "todo" && existing.status === "done";
+
+  if (justCompleted || justReverted) {
+    const amount = computeTaskXp(existing.importance, existing.effort);
+    const previousTotal = await getTotalXp(userId);
+    const signedAmount = justCompleted ? amount : -amount;
+
+    await supabase.from("xp_events").insert({
+      user_id: userId,
+      amount: signedAmount,
+      reason: justCompleted ? "Task completed" : "Task reopened",
+      source_type: "task",
+      source_id: taskId,
+    });
+
+    if (justCompleted) {
+      const newTotal = previousTotal + signedAmount;
+      if (didLevelUp(previousTotal, newTotal)) {
+        result = { leveledUp: true, newLevel: getLevelProgress(newTotal).level };
+      }
+    }
+  }
+
   revalidatePath("/dashboard");
+  return result;
 }
 
 export async function deleteTask(taskId: string): Promise<void> {
@@ -147,6 +202,82 @@ export async function deleteHabit(habitId: string): Promise<void> {
   await supabase.from("habits").delete().eq("id", habitId).eq("user_id", userId);
 
   revalidatePath("/dashboard");
+}
+
+export interface StreakSummary {
+  currentStreak: number;
+  longestStreak: number;
+  freezeCount: number;
+}
+
+/**
+ * Settles the user's overall daily streak up through today, persisting any
+ * change. Safe to call on every dashboard load: catches up on decay/freeze
+ * spending for any days missed since the last visit, and — if the user has
+ * already completed something today — bumps the streak immediately rather
+ * than waiting for a future visit to notice.
+ */
+export async function syncStreak(userId: string): Promise<StreakSummary> {
+  const supabase = await createClient();
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("timezone, current_streak, longest_streak, streak_freeze_count, streak_last_date")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (!profile) {
+    return { currentStreak: 0, longestStreak: 0, freezeCount: 0 };
+  }
+
+  const today = toLocalDateString(new Date(), profile.timezone);
+
+  const [{ data: doneTasks }, { data: habitCompletions }] = await Promise.all([
+    supabase.from("tasks").select("completed_at").eq("user_id", userId).eq("status", "done"),
+    supabase.from("habit_completions").select("completed_on").eq("user_id", userId),
+  ]);
+
+  const completedDates = new Set<string>();
+  for (const task of doneTasks ?? []) {
+    if (task.completed_at) {
+      completedDates.add(toLocalDateString(new Date(task.completed_at), profile.timezone));
+    }
+  }
+  for (const completion of habitCompletions ?? []) {
+    completedDates.add(completion.completed_on);
+  }
+
+  const state: StreakState = {
+    currentStreak: profile.current_streak,
+    longestStreak: profile.longest_streak,
+    freezeCount: profile.streak_freeze_count,
+    lastProcessedDate: profile.streak_last_date,
+  };
+
+  const next = advanceStreak(state, completedDates, today);
+
+  const changed =
+    next.currentStreak !== state.currentStreak ||
+    next.longestStreak !== state.longestStreak ||
+    next.freezeCount !== state.freezeCount ||
+    next.lastProcessedDate !== state.lastProcessedDate;
+
+  if (changed) {
+    await supabase
+      .from("profiles")
+      .update({
+        current_streak: next.currentStreak,
+        longest_streak: next.longestStreak,
+        streak_freeze_count: next.freezeCount,
+        streak_last_date: next.lastProcessedDate,
+      })
+      .eq("id", userId);
+  }
+
+  return {
+    currentStreak: next.currentStreak,
+    longestStreak: next.longestStreak,
+    freezeCount: next.freezeCount,
+  };
 }
 
 export async function setHabitCompletedToday(

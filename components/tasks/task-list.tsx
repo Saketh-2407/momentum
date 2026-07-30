@@ -7,6 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { sortForDayView } from "@/lib/tasks/scheduling";
 import { cn } from "@/lib/utils";
+import { showLevelUpToast } from "@/components/gamification/level-up-toast";
 import type { Database } from "@/lib/supabase/database.types";
 
 type Task = Database["public"]["Tables"]["tasks"]["Row"];
@@ -30,8 +31,11 @@ function TaskRow({ task }: { task: Task }) {
       <Checkbox
         checked={isDone}
         onCheckedChange={(checked) =>
-          startTransition(() => {
-            setTaskStatus(task.id, checked ? "done" : "todo");
+          startTransition(async () => {
+            const result = await setTaskStatus(task.id, checked ? "done" : "todo");
+            if (result.leveledUp && result.newLevel) {
+              showLevelUpToast(result.newLevel);
+            }
           })
         }
         aria-label={`Mark "${task.title}" as ${isDone ? "not done" : "done"}`}
