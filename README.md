@@ -61,6 +61,7 @@ Real values live in `.env.local`, which is gitignored and never committed.
 | `npm test` | Vitest (unit + component tests) |
 | `npm run test:watch` | Vitest in watch mode |
 | `npm run test:e2e` | Playwright end-to-end tests (starts its own dev server) |
+| `npm run eval:planner` | Scores the AI planner against `lib/planner/eval-set.ts` using the real Gemini API. Not part of `npm test` — costs real API calls and isn't deterministic. |
 
 ## Project structure
 

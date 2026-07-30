@@ -78,6 +78,77 @@ export async function createTask(
   return {};
 }
 
+export interface CommitPlanItemInput {
+  title: string;
+  notes: string | null;
+  importance: number;
+  effort: number;
+  scheduledAt: string | null;
+  deadline: string | null;
+}
+
+/**
+ * Commits accepted AI-planner items as real tasks — only ever called after
+ * the user reviews and accepts the plan (human-in-the-loop; the planner
+ * itself never writes to the database).
+ */
+export async function commitPlanItems(items: CommitPlanItemInput[]): Promise<ActionState> {
+  const userId = await requireUserId();
+
+  if (items.length === 0) {
+    return { error: "No items to add." };
+  }
+
+  const rows: Array<{
+    user_id: string;
+    title: string;
+    notes: string | null;
+    category: null;
+    scheduled_at: string | null;
+    deadline: string | null;
+    importance: number;
+    effort: number;
+  }> = [];
+
+  for (const item of items) {
+    const draft: TaskDraft = {
+      title: item.title,
+      notes: item.notes,
+      category: null,
+      scheduledAt: item.scheduledAt,
+      deadline: item.deadline,
+      importance: item.importance,
+      effort: item.effort,
+    };
+
+    const validation = validateTaskDraft(draft);
+    if (!validation.valid) {
+      return { error: `"${item.title}": ${validation.errors.join(" ")}` };
+    }
+
+    rows.push({
+      user_id: userId,
+      title: draft.title.trim(),
+      notes: draft.notes ?? null,
+      category: null,
+      scheduled_at: draft.scheduledAt ?? null,
+      deadline: draft.deadline ?? null,
+      importance: draft.importance,
+      effort: draft.effort,
+    });
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("tasks").insert(rows);
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath("/dashboard");
+  return {};
+}
+
 export interface SetTaskStatusResult {
   leveledUp: boolean;
   newLevel?: number;

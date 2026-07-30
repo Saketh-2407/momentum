@@ -23,6 +23,7 @@ import { HabitForm } from "@/components/habits/habit-form";
 import { HabitList, type HabitListItem } from "@/components/habits/habit-list";
 import { StatsRow } from "@/components/dashboard/stats-row";
 import { InsightsSection } from "@/components/dashboard/insights-section";
+import { PlannerCard } from "@/components/planner/planner-card";
 
 export const metadata: Metadata = { title: "Dashboard" };
 
@@ -124,6 +125,15 @@ export default async function DashboardPage() {
         freezeCount={streak.freezeCount}
         totalXp={totalXp}
       />
+
+      <Card>
+        <CardHeader>
+          <CardTitle render={<h2 />}>Brain dump</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <PlannerCard />
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
