@@ -344,6 +344,46 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["suggested_tasks"]["Insert"]>;
         Relationships: [];
       };
+      boss_battles: {
+        Row: {
+          id: string;
+          user_id: string;
+          week_start: string;
+          target_count: number;
+          bonus_xp: number;
+          claimed_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          week_start: string;
+          target_count: number;
+          bonus_xp: number;
+          claimed_at?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["boss_battles"]["Insert"]>;
+        Relationships: [];
+      };
+      focus_sessions: {
+        Row: {
+          id: string;
+          user_id: string;
+          task_id: string | null;
+          duration_minutes: number;
+          completed_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          task_id?: string | null;
+          duration_minutes: number;
+          completed_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["focus_sessions"]["Insert"]>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {

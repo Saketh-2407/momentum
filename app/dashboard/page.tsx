@@ -10,6 +10,7 @@ import {
   computeCategoryBreakdown,
 } from "@/lib/gamification/insights";
 import { syncStreak } from "@/app/dashboard/actions";
+import { syncBossBattle } from "@/app/dashboard/standout/actions";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -25,6 +26,9 @@ import { HabitList, type HabitListItem } from "@/components/habits/habit-list";
 import { StatsRow } from "@/components/dashboard/stats-row";
 import { InsightsSection } from "@/components/dashboard/insights-section";
 import { PlannerCard } from "@/components/planner/planner-card";
+import { BossBattleCard } from "@/components/dashboard/boss-battle-card";
+import { FocusTimer } from "@/components/dashboard/focus-timer";
+import { ShareProgressCard } from "@/components/dashboard/share-progress-card";
 
 export const metadata: Metadata = { title: "Dashboard" };
 
@@ -58,6 +62,7 @@ export default async function DashboardPage() {
   const timezone = profile?.timezone ?? "UTC";
   const today = toLocalDateString(new Date(), timezone);
   const streak = await syncStreak(userId!);
+  const bossBattle = await syncBossBattle(userId!);
 
   const tasks = allTasks ?? [];
   const todoTasks = tasks.filter((task) => task.status === "todo");
@@ -133,6 +138,29 @@ export default async function DashboardPage() {
         totalXp={totalXp}
       />
 
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle render={<h2 />} className="text-sm">
+              Weekly boss battle
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <BossBattleCard battle={bossBattle} />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle render={<h2 />} className="text-sm">
+              Share your progress
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ShareProgressCard />
+          </CardContent>
+        </Card>
+      </div>
+
       <Card>
         <CardHeader>
           <CardTitle render={<h2 />}>Brain dump</CardTitle>
@@ -159,6 +187,15 @@ export default async function DashboardPage() {
         <CardContent className="flex flex-col gap-6">
           <HabitForm />
           <HabitList habits={habitItems} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle render={<h2 />}>Focus mode</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <FocusTimer tasks={todoTasks.map((task) => ({ id: task.id, title: task.title }))} />
         </CardContent>
       </Card>
 

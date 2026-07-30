@@ -5,7 +5,7 @@ test("home page renders the Momentum landing page", async ({ page }) => {
   await expect(page.getByRole("heading", { level: 1 })).toContainText(
     "to-do list into a game",
   );
-  await expect(page.getByRole("link", { name: "Get started" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Get started", exact: true })).toBeVisible();
 });
 
 test("visiting the dashboard while signed out redirects to login", async ({ page }) => {
