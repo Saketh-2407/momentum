@@ -10,6 +10,8 @@ export type CadenceType = "daily" | "weekly";
 export type XpSourceType = "task" | "habit" | "bonus";
 export type FriendshipStatus = "pending" | "accepted";
 export type WorkbookItemKind = "task" | "habit";
+export type ConnectorProvider = "google_calendar" | "gmail";
+export type SuggestedTaskStatus = "pending" | "accepted" | "dismissed";
 
 export interface Database {
   public: {
@@ -266,6 +268,80 @@ export interface Database {
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["co_op_quest_contributions"]["Insert"]>;
+        Relationships: [];
+      };
+      connections: {
+        Row: {
+          id: string;
+          user_id: string;
+          provider: ConnectorProvider;
+          encrypted_refresh_token: string;
+          scope: string;
+          sync_cursor: string | null;
+          last_synced_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          provider: ConnectorProvider;
+          encrypted_refresh_token: string;
+          scope: string;
+          sync_cursor?: string | null;
+          last_synced_at?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["connections"]["Insert"]>;
+        Relationships: [];
+      };
+      calendar_events: {
+        Row: {
+          id: string;
+          user_id: string;
+          source_ref: string;
+          title: string;
+          starts_at: string;
+          ends_at: string | null;
+          is_all_day: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          source_ref: string;
+          title: string;
+          starts_at: string;
+          ends_at?: string | null;
+          is_all_day?: boolean;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["calendar_events"]["Insert"]>;
+        Relationships: [];
+      };
+      suggested_tasks: {
+        Row: {
+          id: string;
+          user_id: string;
+          source_type: "gmail";
+          source_ref: string;
+          title: string;
+          notes: string | null;
+          suggested_deadline: string | null;
+          status: SuggestedTaskStatus;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          source_type?: "gmail";
+          source_ref: string;
+          title: string;
+          notes?: string | null;
+          suggested_deadline?: string | null;
+          status?: SuggestedTaskStatus;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["suggested_tasks"]["Insert"]>;
         Relationships: [];
       };
     };

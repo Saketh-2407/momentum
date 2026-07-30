@@ -38,6 +38,7 @@ Open http://localhost:3000.
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google Cloud OAuth client (Gmail + Calendar, Phase 5) |
 | `GOOGLE_REDIRECT_URI` | Your app's `/api/connectors/google/callback` URL |
 | `NEXT_PUBLIC_SITE_URL` | Base URL of the deployment (`http://localhost:3000` locally) |
+| `TOKEN_ENCRYPTION_KEY` | 32-byte key, base64: `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"` — encrypts connector refresh tokens at rest |
 
 Real values live in `.env.local`, which is gitignored and never committed.
 
@@ -48,6 +49,24 @@ Real values live in `.env.local`, which is gitignored and never committed.
    `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` used above, and add
    `https://<project-ref>.supabase.co/auth/v1/callback` as an authorized redirect URI in the
    Google Cloud OAuth client), and **Anonymous Sign-Ins** (powers the no-login demo mode).
+
+### Google Cloud setup (Gmail + Calendar smart triage, Phase 5)
+
+This is a *separate* OAuth flow from Supabase's "Sign in with Google" above — it requests
+broader, read-only data scopes (`calendar.readonly`, `gmail.readonly`) and stores its own
+encrypted refresh token in the `connections` table, never touching the Supabase Auth session.
+
+1. In the same (or a new) Google Cloud project, enable the **Gmail API** and **Google Calendar
+   API** (APIs & Services → Library).
+2. **OAuth consent screen**: User type **External**, publishing status **Testing**, and add
+   yourself (and anyone else testing) as a **test user**. This avoids Google's formal review —
+   fine for personal/testing use, required before a public launch (see `SPEC.md`).
+3. Add `http://localhost:3000/api/connectors/google/callback` (and your production URL's
+   equivalent once deployed) as an **authorized redirect URI** on the same OAuth client used for
+   `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` above.
+4. From `/dashboard/settings` in the app, click **Connect** for Calendar and/or Gmail — this
+   redirects to Google's consent screen. Approving it is a one-time, human, in-browser step that
+   cannot be scripted or automated; nothing else in the app can complete this on your behalf.
 
 ## Scripts
 

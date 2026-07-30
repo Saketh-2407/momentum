@@ -1,5 +1,11 @@
 import { toLocalHour } from "@/lib/date/local-day";
-import type { EnergyLevel, ParsedTaskDraft, PlanItem, PlannerContext } from "@/lib/planner/types";
+import type {
+  EnergyLevel,
+  FixedCommitment,
+  ParsedTaskDraft,
+  PlanItem,
+  PlannerContext,
+} from "@/lib/planner/types";
 
 const URGENCY_IMPORTANCE_WEIGHT = 20;
 const ENERGY_FIT_WEIGHT = 10;
@@ -75,16 +81,52 @@ export function resolveDependencies<T extends { title: string; dependsOnTitle: s
   return ordered;
 }
 
-/** Assigns sequential time-blocks starting now, sized by each task's effort. */
+/**
+ * Advances `start` past any fixed commitment the [start, start+duration)
+ * window would overlap, so a task is never scheduled on top of a real
+ * meeting. Commitments must be pre-sorted by start time; `start` only ever
+ * increases, so this terminates after at most one pass per commitment.
+ */
+function nextAvailableSlot(
+  start: number,
+  durationMs: number,
+  sortedCommitments: { startsAtMs: number; endsAtMs: number }[],
+): number {
+  let candidateStart = start;
+  let movedAny = true;
+
+  while (movedAny) {
+    movedAny = false;
+    const candidateEnd = candidateStart + durationMs;
+    for (const commitment of sortedCommitments) {
+      const overlaps = candidateStart < commitment.endsAtMs && candidateEnd > commitment.startsAtMs;
+      if (overlaps && commitment.endsAtMs > candidateStart) {
+        candidateStart = commitment.endsAtMs;
+        movedAny = true;
+      }
+    }
+  }
+
+  return candidateStart;
+}
+
+/** Assigns sequential time-blocks starting now, sized by effort, routed around fixed commitments. */
 export function assignTimeBlocks<T extends { effort: number }>(
   items: T[],
   nowIso: string,
+  fixedCommitments: FixedCommitment[] = [],
 ): (T & { suggestedScheduledAt: string })[] {
+  const sortedCommitments = fixedCommitments
+    .map((c) => ({ startsAtMs: Date.parse(c.startsAt), endsAtMs: Date.parse(c.endsAt) }))
+    .sort((a, b) => a.startsAtMs - b.startsAtMs);
+
   let cursor = Date.parse(nowIso);
 
   return items.map((item) => {
+    const durationMs = item.effort * MINUTES_PER_EFFORT_POINT * 60_000;
+    cursor = nextAvailableSlot(cursor, durationMs, sortedCommitments);
     const suggestedScheduledAt = new Date(cursor).toISOString();
-    cursor += item.effort * MINUTES_PER_EFFORT_POINT * 60_000;
+    cursor += durationMs;
     return { ...item, suggestedScheduledAt };
   });
 }
@@ -94,5 +136,5 @@ export function buildPlan(drafts: ParsedTaskDraft[], context: PlannerContext): P
   const scored = drafts.map((draft) => ({ ...draft, score: computeScore(draft, context) }));
   const sorted = [...scored].sort((a, b) => b.score - a.score);
   const dependencyOrdered = resolveDependencies(sorted);
-  return assignTimeBlocks(dependencyOrdered, context.nowIso);
+  return assignTimeBlocks(dependencyOrdered, context.nowIso, context.fixedCommitments ?? []);
 }

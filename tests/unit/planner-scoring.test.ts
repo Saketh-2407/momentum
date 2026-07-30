@@ -140,6 +140,40 @@ describe("assignTimeBlocks", () => {
     const gapMinutes = (Date.parse(second.suggestedScheduledAt) - Date.parse(first.suggestedScheduledAt)) / 60_000;
     expect(gapMinutes).toBe(2 * 25);
   });
+
+  it("routes a task around a fixed commitment that starts right now", () => {
+    const commitments = [
+      { title: "Standup", startsAt: NOW, endsAt: "2026-03-05T09:30:00Z" },
+    ];
+    const [first] = assignTimeBlocks([{ effort: 1 }], NOW, commitments);
+    expect(Date.parse(first.suggestedScheduledAt)).toBe(Date.parse("2026-03-05T09:30:00Z"));
+  });
+
+  it("does not move a task that does not overlap any commitment", () => {
+    const commitments = [
+      { title: "Later meeting", startsAt: "2026-03-05T14:00:00Z", endsAt: "2026-03-05T15:00:00Z" },
+    ];
+    const [first] = assignTimeBlocks([{ effort: 1 }], NOW, commitments);
+    expect(Date.parse(first.suggestedScheduledAt)).toBe(Date.parse(NOW));
+  });
+
+  it("routes around back-to-back commitments in one pass", () => {
+    const commitments = [
+      { title: "Meeting 1", startsAt: NOW, endsAt: "2026-03-05T09:30:00Z" },
+      { title: "Meeting 2", startsAt: "2026-03-05T09:30:00Z", endsAt: "2026-03-05T10:00:00Z" },
+    ];
+    const [first] = assignTimeBlocks([{ effort: 1 }], NOW, commitments);
+    expect(Date.parse(first.suggestedScheduledAt)).toBe(Date.parse("2026-03-05T10:00:00Z"));
+  });
+
+  it("schedules a second task after both the first task and a commitment between them", () => {
+    // 09:00 task (25 min, ends 09:25), then a meeting 09:25-10:00, then task 2.
+    const commitments = [
+      { title: "Meeting", startsAt: "2026-03-05T09:25:00Z", endsAt: "2026-03-05T10:00:00Z" },
+    ];
+    const [, second] = assignTimeBlocks([{ effort: 1 }, { effort: 1 }], NOW, commitments);
+    expect(Date.parse(second.suggestedScheduledAt)).toBe(Date.parse("2026-03-05T10:00:00Z"));
+  });
 });
 
 describe("buildPlan", () => {

@@ -17,10 +17,18 @@ export interface ParsedTaskDraft {
   rationale: string;
 }
 
+export interface FixedCommitment {
+  title: string;
+  startsAt: string;
+  endsAt: string;
+}
+
 export interface PlannerContext {
   /** The instant the plan is being generated, as ISO. */
   nowIso: string;
   timezone: string;
+  /** Calendar events (Phase 5) the planner must schedule tasks around, never into. */
+  fixedCommitments?: FixedCommitment[];
 }
 
 /** A parsed item after deterministic scoring, ordering, and time-blocking. */

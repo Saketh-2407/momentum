@@ -114,6 +114,9 @@ export default async function DashboardPage() {
           <Link href="/dashboard/social" className={buttonVariants({ variant: "outline", size: "sm" })}>
             Friends
           </Link>
+          <Link href="/dashboard/settings" className={buttonVariants({ variant: "outline", size: "sm" })}>
+            Integrations
+          </Link>
           <form action="/auth/signout" method="post">
             <Button type="submit" variant="outline" size="sm">
               Log out

@@ -12,7 +12,11 @@ import type { Database } from "@/lib/supabase/database.types";
 
 type Task = Database["public"]["Tables"]["tasks"]["Row"];
 
-const timeFormatter = new Intl.DateTimeFormat(undefined, {
+// Explicit locale: this renders in a client component that's also
+// server-rendered on first paint — server (Node) and browser can otherwise
+// resolve different default locales for the same instant and trigger a
+// hydration mismatch.
+const timeFormatter = new Intl.DateTimeFormat("en-US", {
   hour: "numeric",
   minute: "2-digit",
 });

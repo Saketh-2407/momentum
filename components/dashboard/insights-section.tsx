@@ -10,7 +10,8 @@ import { MiniBarChart } from "@/components/dashboard/mini-bar-chart";
 import { CategoryBreakdown } from "@/components/dashboard/category-breakdown";
 import type { TrendPoint, TimeOfDayBucket, CategoryCount } from "@/lib/gamification/insights";
 
-const trendDayFormatter = new Intl.DateTimeFormat(undefined, { weekday: "short" });
+// Explicit locale — see components/tasks/task-list.tsx for why.
+const trendDayFormatter = new Intl.DateTimeFormat("en-US", { weekday: "short" });
 
 export function InsightsSection({
   trend,

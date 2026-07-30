@@ -19,15 +19,27 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
   }
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("timezone")
-    .eq("id", userId)
-    .maybeSingle();
+  const nowIso = new Date().toISOString();
+
+  const [{ data: profile }, { data: calendarEvents }] = await Promise.all([
+    supabase.from("profiles").select("timezone").eq("id", userId).maybeSingle(),
+    supabase
+      .from("calendar_events")
+      .select("title, starts_at, ends_at")
+      .eq("user_id", userId)
+      .gte("starts_at", nowIso),
+  ]);
 
   const result = await generatePlan(rawText, {
-    nowIso: new Date().toISOString(),
+    nowIso,
     timezone: profile?.timezone ?? "UTC",
+    fixedCommitments: (calendarEvents ?? [])
+      .filter((event) => event.ends_at)
+      .map((event) => ({
+        title: event.title,
+        startsAt: event.starts_at,
+        endsAt: event.ends_at!,
+      })),
   });
 
   return NextResponse.json(result);
