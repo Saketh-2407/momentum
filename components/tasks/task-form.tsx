@@ -6,6 +6,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  IMPORTANCE_EFFORT_LEVELS,
+  IMPORTANCE_EFFORT_SELECT_ITEMS,
+} from "@/lib/tasks/importance-effort";
 
 const initialState: ActionState = {};
 
@@ -45,35 +56,35 @@ export function TaskForm() {
           <Label htmlFor="task-importance" className="text-xs text-muted-foreground">
             Importance
           </Label>
-          <select
-            id="task-importance"
-            name="importance"
-            defaultValue="3"
-            className="h-8 rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-          >
-            {[1, 2, 3, 4, 5].map((n) => (
-              <option key={n} value={n}>
-                {n}
-              </option>
-            ))}
-          </select>
+          <Select name="importance" defaultValue="3" items={IMPORTANCE_EFFORT_SELECT_ITEMS}>
+            <SelectTrigger id="task-importance" className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {IMPORTANCE_EFFORT_LEVELS.map((level) => (
+                <SelectItem key={level.value} value={String(level.value)}>
+                  {level.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="task-effort" className="text-xs text-muted-foreground">
             Effort
           </Label>
-          <select
-            id="task-effort"
-            name="effort"
-            defaultValue="3"
-            className="h-8 rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-          >
-            {[1, 2, 3, 4, 5].map((n) => (
-              <option key={n} value={n}>
-                {n}
-              </option>
-            ))}
-          </select>
+          <Select name="effort" defaultValue="3" items={IMPORTANCE_EFFORT_SELECT_ITEMS}>
+            <SelectTrigger id="task-effort" className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {IMPORTANCE_EFFORT_LEVELS.map((level) => (
+                <SelectItem key={level.value} value={String(level.value)}>
+                  {level.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
       {state.error ? (

@@ -6,9 +6,17 @@ import { Play, Pause, RotateCcw } from "lucide-react";
 import { completeFocusSession } from "@/app/dashboard/standout/actions";
 import { showLevelUpToast } from "@/components/gamification/level-up-toast";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
 const DURATIONS = [15, 25, 45];
+const NO_TASK_VALUE = "__none__";
 
 function formatTime(totalSeconds: number): string {
   const minutes = Math.floor(totalSeconds / 60);
@@ -96,19 +104,27 @@ export function FocusTimer({
       </div>
 
       {tasks.length > 0 ? (
-        <select
-          value={taskId}
-          onChange={(e) => setTaskId(e.target.value)}
+        <Select
+          value={taskId || NO_TASK_VALUE}
+          onValueChange={(value) => setTaskId(!value || value === NO_TASK_VALUE ? "" : value)}
           disabled={isRunning}
-          className="h-8 w-full max-w-xs rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+          items={[
+            { value: NO_TASK_VALUE, label: "No specific task" },
+            ...tasks.map((task) => ({ value: task.id, label: task.title })),
+          ]}
         >
-          <option value="">No specific task</option>
-          {tasks.map((task) => (
-            <option key={task.id} value={task.id}>
-              {task.title}
-            </option>
-          ))}
-        </select>
+          <SelectTrigger className="w-full max-w-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={NO_TASK_VALUE}>No specific task</SelectItem>
+            {tasks.map((task) => (
+              <SelectItem key={task.id} value={task.id}>
+                {task.title}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       ) : null}
 
       <div className="relative flex size-32 items-center justify-center">

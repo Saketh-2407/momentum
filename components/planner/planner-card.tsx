@@ -8,6 +8,18 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  IMPORTANCE_EFFORT_LEVELS,
+  IMPORTANCE_EFFORT_SELECT_ITEMS,
+  nearestImportanceEffortLevel,
+} from "@/lib/tasks/importance-effort";
 import type { PlanItem } from "@/lib/planner/types";
 
 type Stage = "input" | "loading" | "review" | "error";
@@ -52,7 +64,13 @@ export function PlannerCard() {
         return;
       }
 
-      setItems(result.plan.items);
+      setItems(
+        (result.plan.items as PlanItem[]).map((item) => ({
+          ...item,
+          importance: nearestImportanceEffortLevel(item.importance),
+          effort: nearestImportanceEffortLevel(item.effort),
+        })),
+      );
       setStage("review");
     } catch {
       setError("Couldn't reach the planner. Check your connection and try again.");
@@ -177,39 +195,47 @@ export function PlannerCard() {
                 <Label htmlFor={`plan-importance-${index}`} className="text-xs text-muted-foreground">
                   Importance
                 </Label>
-                <select
-                  id={`plan-importance-${index}`}
-                  value={item.importance}
-                  onChange={(e) =>
-                    updateItem(index, { importance: Number(e.target.value) as PlanItem["importance"] })
+                <Select
+                  value={String(item.importance)}
+                  onValueChange={(value) =>
+                    updateItem(index, { importance: Number(value) as PlanItem["importance"] })
                   }
-                  className="h-8 rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                  items={IMPORTANCE_EFFORT_SELECT_ITEMS}
                 >
-                  {[1, 2, 3, 4, 5].map((n) => (
-                    <option key={n} value={n}>
-                      {n}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger id={`plan-importance-${index}`} className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {IMPORTANCE_EFFORT_LEVELS.map((level) => (
+                      <SelectItem key={level.value} value={String(level.value)}>
+                        {level.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="flex flex-col gap-1">
                 <Label htmlFor={`plan-effort-${index}`} className="text-xs text-muted-foreground">
                   Effort
                 </Label>
-                <select
-                  id={`plan-effort-${index}`}
-                  value={item.effort}
-                  onChange={(e) =>
-                    updateItem(index, { effort: Number(e.target.value) as PlanItem["effort"] })
+                <Select
+                  value={String(item.effort)}
+                  onValueChange={(value) =>
+                    updateItem(index, { effort: Number(value) as PlanItem["effort"] })
                   }
-                  className="h-8 rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                  items={IMPORTANCE_EFFORT_SELECT_ITEMS}
                 >
-                  {[1, 2, 3, 4, 5].map((n) => (
-                    <option key={n} value={n}>
-                      {n}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger id={`plan-effort-${index}`} className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {IMPORTANCE_EFFORT_LEVELS.map((level) => (
+                      <SelectItem key={level.value} value={String(level.value)}>
+                        {level.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </li>

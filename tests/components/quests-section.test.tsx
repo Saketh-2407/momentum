@@ -76,4 +76,26 @@ describe("QuestsSection", () => {
 
     await waitFor(() => expect(createQuest).toHaveBeenCalled());
   });
+
+  it("submits the chosen friend's id, not just the default", async () => {
+    const user = userEvent.setup();
+    render(
+      <QuestsSection
+        quests={[]}
+        friends={[
+          { id: "u1", displayName: "Alice" },
+          { id: "u2", displayName: "Bob" },
+        ]}
+      />,
+    );
+
+    await user.type(screen.getByLabelText(/quest title/i), "50 tasks this week");
+    await user.click(screen.getByRole("combobox"));
+    await user.click(await screen.findByRole("option", { name: "Bob" }));
+    await user.click(screen.getByRole("button", { name: /start quest/i }));
+
+    await waitFor(() => expect(createQuest).toHaveBeenCalled());
+    const formData = createQuest.mock.calls[0][1] as FormData;
+    expect(formData.get("friendId")).toBe("u2");
+  });
 });

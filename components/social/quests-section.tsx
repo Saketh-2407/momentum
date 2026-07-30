@@ -7,6 +7,13 @@ import type { ActionState } from "@/app/dashboard/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { QuestProgress } from "@/lib/social/quest";
 
 const initialState: ActionState = {};
@@ -48,18 +55,23 @@ export function QuestsSection({
           </div>
           <div className="flex flex-col gap-2">
             <Label htmlFor="quest-friend">Quest with</Label>
-            <select
-              id="quest-friend"
+            <Select
               name="friendId"
-              className="h-8 rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+              defaultValue={friends[0]?.id}
               required
+              items={friends.map((friend) => ({ value: friend.id, label: friend.displayName }))}
             >
-              {friends.map((friend) => (
-                <option key={friend.id} value={friend.id}>
-                  {friend.displayName}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger id="quest-friend" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {friends.map((friend) => (
+                  <SelectItem key={friend.id} value={friend.id}>
+                    {friend.displayName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           {state.error ? (
             <p role="alert" className="text-sm text-destructive">

@@ -70,6 +70,21 @@ describe("PlannerCard", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent(/too long/i);
   });
 
+  it("shows Low/Medium/High labels in the review list, rounded from the raw score", async () => {
+    const user = userEvent.setup();
+    render(<PlannerCard />);
+
+    await user.type(screen.getByPlaceholderText(/dump everything/i), "reply to landlord");
+    await user.click(screen.getByRole("button", { name: /generate plan/i }));
+    await screen.findByDisplayValue("Reply to landlord");
+
+    // Raw importance 4 -> Medium (3), raw effort 2 -> Low (1).
+    const comboboxes = screen.getAllByRole("combobox");
+    expect(comboboxes[0]).toHaveTextContent("Medium");
+    expect(comboboxes[1]).toHaveTextContent("Low");
+    expect(screen.queryByText("4")).not.toBeInTheDocument();
+  });
+
   it("removes an item from the review list", async () => {
     const user = userEvent.setup();
     render(<PlannerCard />);
@@ -95,8 +110,10 @@ describe("PlannerCard", () => {
     await user.click(screen.getByRole("button", { name: /accept & add 1/i }));
 
     await waitFor(() => expect(commitPlanItems).toHaveBeenCalledTimes(1));
+    // The AI's raw 4/2 (on the underlying 1-5 scale) round to the nearest
+    // selectable Low/Medium/High level (3/1) as soon as the plan is shown.
     expect(commitPlanItems).toHaveBeenCalledWith([
-      expect.objectContaining({ title: "Reply to landlord", importance: 4, effort: 2 }),
+      expect.objectContaining({ title: "Reply to landlord", importance: 3, effort: 1 }),
     ]);
     await waitFor(() =>
       expect(screen.getByPlaceholderText(/dump everything/i)).toBeInTheDocument(),

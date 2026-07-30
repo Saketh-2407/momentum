@@ -58,7 +58,8 @@ describe("FocusTimer", () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     render(<FocusTimer tasks={[{ id: "t1", title: "Write report" }]} />);
 
-    await user.selectOptions(screen.getByRole("combobox"), "t1");
+    await user.click(screen.getByRole("combobox"));
+    await user.click(await screen.findByRole("option", { name: "Write report" }));
     await user.click(screen.getByRole("button", { name: "15m" }));
     await user.click(screen.getByRole("button", { name: /start focus/i }));
 

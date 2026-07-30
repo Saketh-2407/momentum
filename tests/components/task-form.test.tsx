@@ -38,4 +38,32 @@ describe("TaskForm", () => {
 
     await waitFor(() => expect(titleInput.value).toBe(""));
   });
+
+  it("defaults importance and effort to Medium", () => {
+    render(<TaskForm />);
+    const comboboxes = screen.getAllByRole("combobox");
+    expect(comboboxes[0]).toHaveTextContent("Medium");
+    expect(comboboxes[1]).toHaveTextContent("Medium");
+  });
+
+  it("submits the numeric value (5) for a High importance/effort selection, not the label", async () => {
+    createTask.mockResolvedValue({});
+    const user = userEvent.setup();
+    render(<TaskForm />);
+
+    await user.type(screen.getByLabelText(/new task/i), "Write the report");
+
+    const [importanceTrigger, effortTrigger] = screen.getAllByRole("combobox");
+    await user.click(importanceTrigger);
+    await user.click(await screen.findByRole("option", { name: "High" }));
+    await user.click(effortTrigger);
+    await user.click(await screen.findByRole("option", { name: "Low" }));
+
+    await user.click(screen.getByRole("button", { name: /add task/i }));
+
+    await waitFor(() => expect(createTask).toHaveBeenCalled());
+    const formData = createTask.mock.calls[0][1] as FormData;
+    expect(formData.get("importance")).toBe("5");
+    expect(formData.get("effort")).toBe("1");
+  });
 });
