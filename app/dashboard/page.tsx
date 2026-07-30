@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { toLocalDateString } from "@/lib/date/local-day";
 import { cadenceFromRow } from "@/lib/habits/cadence";
@@ -9,7 +10,7 @@ import {
   computeCategoryBreakdown,
 } from "@/lib/gamification/insights";
 import { syncStreak } from "@/app/dashboard/actions";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -110,6 +111,9 @@ export default async function DashboardPage() {
         </div>
         <div className="flex items-center gap-3">
           {claims?.is_anonymous ? <Badge variant="secondary">Demo</Badge> : null}
+          <Link href="/dashboard/social" className={buttonVariants({ variant: "outline", size: "sm" })}>
+            Friends
+          </Link>
           <form action="/auth/signout" method="post">
             <Button type="submit" variant="outline" size="sm">
               Log out
